@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import math
 from torch import Tensor
@@ -94,4 +95,61 @@ class MultiHeadAttention(nn.Module):
         # 将张量重新调整形状，以便拼接
         tensor = tensor.view(batch_size, length, d_model)
         return tensor
-    
+
+class PositionwiseFeedForward(nn.Module):
+
+    def __init__(self, d_model: int, hidend_dim: int, drop_prob = 0.1):
+        """
+        初始化 PositionwiseFeedForward 类。
+
+        :param d_model: 输入特征的维度。
+        :param hidden_dim: 隐藏层的维度。
+        """
+        # 调用父类 nn.Module 的初始化方法
+        super(PositionwiseFeedForward, self).__init__()
+        # 定义两层线性变换
+        self.linear1 = nn.Linear(d_model, hidend_dim)
+        self.linear2 = nn.Linear(hidend_dim, d_model)
+        # 定义激活函数
+        self.relu = nn.ReLU()
+        # 定义 dropout 层
+        self.dropout = nn.Dropout(p = drop_prob)
+
+    def forward(self, x):
+        """
+        前向传播过程。
+
+        :param x: 输入张量，形状为 (batch_size, length, d_model)。
+        :return: 经过位置前馈网络的输出张量，形状为 (batch_size, length, d_model)。
+        """
+        # 对输入进行线性变换
+        x = self.linear1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x)
+        return x;
+
+class LayerNorm(nn.Module):
+    def __init__(self, d_model, eps = 1e-12):
+        super(LayerNorm, self).__init__()
+        self.gamma = nn.Parameter(torch.ones(d_model))
+        self.beta = nn.Parameter(torch.zeros(d_model))
+        self.eps = eps
+    def forward(self, x):
+        """
+        前向传播过程。
+
+        :param x: 输入张量，形状为 (batch_size, length, d_model)。
+        :return: 经过层归一化的输出张量，形状为 (batch_size, length, d_model)。
+        """
+        # 计算输入张量在最后一个维度上的均值，并保持维度不变
+        mean = x.mean(-1, keepdim=True)
+        # 计算输入张量在最后一个维度上的方差，并保持维度不变，这里使用无偏估计
+        var = x.var(-1, unbiased=False, keepdim=True)
+        # '-1' 表示最后一个维度。
+
+        # 对输入张量进行归一化，减去均值并除以标准差
+        out = (x - mean) / torch.sqrt(var + self.eps)
+        # 对归一化后的张量进行缩放和偏移
+        out = self.gamma * out + self.beta
+        return out

@@ -13,7 +13,7 @@ class TokenEmbedding(nn.Module):
         - vocab_size (int): 词汇表的大小。
         - d_model (int): 嵌入向量的维度。
 
-        初始化父类nn.Embedding，并设置padding_idx为1。
+        初始化父类nn.Embedding 并设置padding_idx为1。
         """
         super(TokenEmbedding, self).__init__(vocab_size, d_model, padding_idx=1)
 
